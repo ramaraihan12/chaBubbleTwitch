@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chat Bubble Overlay — Custom Twitch Chat untuk OBS</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: #0e0e10;
+    color: #e0e0e0;
+    line-height: 1.7;
+  }
+  .container { max-width: 780px; margin: 0 auto; padding: 0 24px; }
+
+  .hero {
+    text-align: center;
+    padding: 80px 20px 60px;
+    background: linear-gradient(135deg, #1a1028 0%, #0e0e10 100%);
+    border-bottom: 1px solid #2a2040;
+  }
+  .hero .badge {
+    display: inline-block;
+    background: #9147ff22;
+    border: 1px solid #9147ff55;
+    color: #b388ff;
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    margin-bottom: 20px;
+    letter-spacing: 0.5px;
+  }
+  .hero h1 {
+    font-size: 38px;
+    color: #fff;
+    margin-bottom: 12px;
+  }
+  .hero h1 span { color: #9147ff; }
+  .hero .desc {
+    font-size: 17px;
+    color: #a0a0b0;
+    max-width: 520px;
+    margin: 0 auto 28px;
+  }
+  .btn {
+    display: inline-block;
+    background: #9147ff;
+    color: #fff;
+    padding: 12px 28px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 15px;
+    transition: background 0.2s;
+  }
+  .btn:hover { background: #772ce8; }
+  .btn-outline {
+    background: transparent;
+    border: 2px solid #9147ff;
+    color: #b388ff;
+  }
+  .btn-outline:hover { background: #9147ff22; }
+
+  section { padding: 50px 0; }
+  section.alt { background: #121216; }
+  h2 {
+    font-size: 26px;
+    color: #fff;
+    margin-bottom: 8px;
+  }
+  h3 {
+    font-size: 18px;
+    color: #ccc;
+    margin: 28px 0 10px;
+  }
+  .subtitle { color: #888; font-size: 15px; margin-bottom: 24px; }
+
+  .steps { counter-reset: step; list-style: none; }
+  .steps li {
+    counter-increment: step;
+    display: flex;
+    gap: 16px;
+    margin-bottom: 28px;
+    align-items: flex-start;
+  }
+  .steps li::before {
+    content: counter(step);
+    background: #9147ff;
+    color: #fff;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 15px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .steps .content { flex: 1; }
+  .steps .content p { color: #b0b0c0; margin-bottom: 4px; }
+  .steps .content .info {
+    font-size: 13px;
+    color: #777;
+    margin-top: 4px;
+  }
+
+  .code-block {
+    background: #1a1a24;
+    border: 1px solid #2a2a3a;
+    border-radius: 8px;
+    padding: 14px 18px;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 14px;
+    color: #c4b5ff;
+    overflow-x: auto;
+    margin: 8px 0;
+    word-break: break-all;
+  }
+
+  .tip {
+    background: #1a1f14;
+    border-left: 4px solid #4caf50;
+    padding: 12px 18px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 14px;
+    color: #b0c0a0;
+  }
+  .warn {
+    background: #2a1a14;
+    border-left: 4px solid #ff7043;
+    padding: 12px 18px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 14px;
+    color: #d0a090;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+  }
+  th {
+    background: #1f1f2a;
+    color: #c0a0ff;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 2px solid #2a2a3a;
+  }
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #1a1a24;
+    color: #c0c0d0;
+  }
+
+  .faq-item {
+    border: 1px solid #222;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 12px;
+  }
+  .faq-item h4 {
+    color: #fff;
+    font-size: 16px;
+    margin-bottom: 6px;
+  }
+  .faq-item p { color: #999; font-size: 14px; }
+
+  footer {
+    text-align: center;
+    padding: 40px 20px;
+    border-top: 1px solid #222;
+    color: #666;
+    font-size: 13px;
+  }
+
+  @media (max-width: 600px) {
+    .hero h1 { font-size: 26px; }
+    .steps li { flex-direction: column; gap: 6px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="badge">Free — No Login — No Token</div>
+  <h1>Chat <span>Bubble</span> Overlay</h1>
+  <p class="desc">Tampilan chat Twitch kustom berbentuk gelembung. Pasang di OBS sekali, langsung hidup. Gratis selamanya.</p>
+  <a href="chat-bubble.html" class="btn">Coba Sekarang</a>
+  <a href="#tutorial" class="btn btn-outline" style="margin-left: 10px;">Lihat Tutorial</a>
+</div>
+
+<section id="tutorial">
+  <div class="container">
+    <h2>Cara Pasang di OBS</h2>
+    <p class="subtitle">Cukup 5 menit. Ikuti langkah-langkahnya.</p>
+
+    <h3>1. Buka OBS Studio</h3>
+    <p style="color:#888;margin-bottom:16px;">Pastikan OBS sudah terinstall. Kalau belum, download gratis di <a href="https://obsproject.com" style="color:#9147ff;">obsproject.com</a>.</p>
+
+    <h3>2. Tambah Browser Source</h3>
+    <ol class="steps">
+      <li>
+        <div class="content">
+          <p>Di panel <strong>Sources</strong> (kiri bawah OBS), klik tombol <strong>+</strong></p>
+        </div>
+      </li>
+      <li>
+        <div class="content">
+          <p>Pilih <strong>Browser</strong> dari menu</p>
+          <div class="info">Kalau tidak ada opsi Browser, update OBS ke versi terbaru.</div>
+        </div>
+      </li>
+    </ol>
+
+    <h3>3. Isi Properti Browser</h3>
+    <table>
+      <tr><th>Properti</th><th>Isi</th></tr>
+      <tr><td>URL</td><td><code>https://ramaraihan12.github.io/chaBubbleTwitch/chat-bubble.html</code></td></tr>
+      <tr><td>Width</td><td>400</td></tr>
+      <tr><td>Height</td><td>600</td></tr>
+    </table>
+
+    <div class="warn">
+      <strong>PENTING:</strong> Hilangkan centang <strong>"Shutdown source when not visible"</strong> agar overlay tidak mati saat pindah scene.
+    </div>
+
+    <h3>4. Connect ke Channel</h3>
+    <ol class="steps">
+      <li>
+        <div class="content">
+          <p>Di panel Sources, <strong>klik kanan</strong> source "Chat Bubble" → pilih <strong>Interact</strong></p>
+          <div class="info">Akan muncul jendela interaksi dengan kotak input dan tombol Connect.</div>
+        </div>
+      </li>
+      <li>
+        <div class="content">
+          <p>Ketik <strong>nama channel Twitch</strong> Anda</p>
+          <div class="info">Contoh: kalau URL Twitch Anda <strong>twitch.tv/fahri_gaming</strong>, isi dengan <strong>fahri_gaming</strong>. Tanpa @, tanpa spasi, tanpa https://.</div>
+        </div>
+      </li>
+      <li>
+        <div class="content">
+          <p>Klik <strong>Connect</strong> — tunggu sampai muncul "Connected: namachannel"</p>
+          <div class="info">Biasanya butuh 2-3 detik. Tombol akan berubah jadi Disconnect.</div>
+        </div>
+      </li>
+      <li>
+        <div class="content">
+          <p>Tutup jendela Interact. <strong>Selesai.</strong></p>
+          <div class="info">Chat sekarang muncul sebagai bubble di pojok kanan bawah layar.</div>
+        </div>
+      </li>
+    </ol>
+
+    <div class="tip">
+      <strong>Tips:</strong> Setelah connect, posisi bubble bisa digeser dan di-resize seperti layer biasa di OBS. Drag langsung di preview.
+    </div>
+  </div>
+</section>
+
+<section class="alt">
+  <div class="container">
+    <h2>Cara Ganti Channel</h2>
+    <p class="subtitle">Kalau mau pindah ke channel Twitch lain.</p>
+    <ol class="steps">
+      <li>
+        <div class="content">
+          <p>Klik kanan source → <strong>Interact</strong></p>
+        </div>
+      </li>
+      <li>
+        <div class="content">
+          <p>Klik <strong>Disconnect</strong></p>
+        </div>
+      </li>
+      <li>
+        <div class="content">
+          <p>Ketik nama channel baru → <strong>Connect</strong></p>
+        </div>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <h2>Spesifikasi</h2>
+    <table>
+      <tr><td>Butuh Login / Token?</td><td>Tidak — anonymous connection ke Twitch IRC</td></tr>
+      <tr><td>Platform</td><td>Semua (Windows, Mac, Linux) — via OBS Browser Source</td></tr>
+      <tr><td>Emote</td><td>Didukung (Twitch global + channel emotes)</td></tr>
+      <tr><td>Warna Username</td><td>Mengikuti warna asli Twitch user</td></tr>
+      <tr><td>Animasi</td><td>Slide-in + fade-out setiap chat</td></tr>
+      <tr><td>Jumlah Bubble</td><td>Maksimal 6 bubble tampil sekaligus</td></tr>
+      <tr><td>Harga</td><td>Gratis</td></tr>
+    </table>
+  </div>
+</section>
+
+<section class="alt">
+  <div class="container">
+    <h2>Troubleshooting</h2>
+
+    <div class="faq-item">
+      <h4>Chat tidak muncul</h4>
+      <p>Pastikan ada orang yang chat di channel Anda. Coba chat sendiri dari HP atau akun lain. Kalau masih tidak muncul, Disconnect lalu Connect ulang.</p>
+    </div>
+    <div class="faq-item">
+      <h4>"Gagal connect" atau "Connecting..." terus</h4>
+      <p>Periksa nama channel sudah benar (tanpa @, tanpa spasi, tanpa https://). Cek koneksi internet. Coba tutup dan buka ulang OBS.</p>
+    </div>
+    <div class="faq-item">
+      <h4>Bubble terpotong</h4>
+      <p>Ukuran Browser Source di OBS terlalu kecil. Perbesar Width dan Height di properti source. Rekomendasi: Width 400, Height 600.</p>
+    </div>
+    <div class="faq-item">
+      <h4>Harus connect ulang setiap restart OBS?</h4>
+      <p>Saat ini ya. Setiap restart OBS, lakukan Interact → Connect kembali. Fitur auto-connect direncanakan di update berikutnya.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>Chat Bubble Overlay v1.0 — Dibuat oleh Fahri</p>
+  <p>Project open-source | Tidak berafiliasi dengan Twitch Interactive, Inc.</p>
+</footer>
+
+</body>
+</html>
