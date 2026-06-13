@@ -221,6 +221,21 @@ html, body {
   padding-right: 5px;
 }
 
+/* Hidden measurer: same font/width as .bubble-message but no height constraints */
+#text-measurer {
+  position: absolute;
+  left: -9999px;
+  top: -9999px;
+  width: 330px; /* 380px bubble - 25px left - 25px right = 330px */
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  visibility: hidden;
+  pointer-events: none;
+}
+
 .bubble-message .emote {
   display: inline-block;
   vertical-align: middle;
@@ -261,6 +276,7 @@ html, body {
 </div>
 
 <div id="chat-container"></div>
+<div id="text-measurer"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/tmi.js@latest/dist/tmi.min.js">
 </script>
@@ -337,26 +353,27 @@ html, body {
     return { bubble: bubble, messageEl: msgEl };
   }
 
+  var textMeasurer = document.getElementById('text-measurer');
+
   function addBubble(username, messageHTML, color) {
     var created = createBubble(username, messageHTML, color);
     created.messageEl.innerHTML = messageHTML;
-    
-    // Set size-3 sebagai default agar memiliki ruang maksimal saat pengukuran tinggi teks
-    created.bubble.classList.add('size-3');
-    
-    chatContainer.appendChild(created.bubble);
 
-    // Mengukur tinggi scroll dari elemen pesan
-    var scrollHeight = created.messageEl.scrollHeight;
-    
-    created.bubble.classList.remove('size-3');
-    if (scrollHeight <= 22) {
+    // Mengukur tinggi teks menggunakan elemen tersembunyi yang tidak dibatasi tingginya
+    textMeasurer.innerHTML = messageHTML;
+    var textHeight = textMeasurer.offsetHeight;
+
+    // Menentukan ukuran bubble berdasarkan tinggi teks sebenarnya
+    // 1 baris ~18px, 2 baris ~36px, 3+ baris > 36px
+    if (textHeight <= 20) {
       created.bubble.classList.add('size-1');
-    } else if (scrollHeight <= 40) {
+    } else if (textHeight <= 38) {
       created.bubble.classList.add('size-2');
     } else {
       created.bubble.classList.add('size-3');
     }
+
+    chatContainer.appendChild(created.bubble);
 
     var bubbles = chatContainer.querySelectorAll('.chat-bubble');
     while (bubbles.length > MAX_BUBBLES) {
