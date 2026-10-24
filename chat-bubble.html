@@ -376,10 +376,11 @@ html, body {
 
     chatContainer.appendChild(created.bubble);
 
-    var bubbles = chatContainer.querySelectorAll('.chat-bubble');
+    // Skip bubbles already fading out, or this loop never ends
+    var bubbles = chatContainer.querySelectorAll('.chat-bubble:not(.removing)');
     while (bubbles.length > MAX_BUBBLES) {
       removeBubble(bubbles[0]);
-      bubbles = chatContainer.querySelectorAll('.chat-bubble');
+      bubbles = chatContainer.querySelectorAll('.chat-bubble:not(.removing)');
     }
   }
 
