@@ -500,10 +500,32 @@ html, body {
     }
   });
 
+  // ?demo=1 shows sample chat without connecting (screenshots, offline demos)
+  function startDemo() {
+    var samples = [
+      ['pixelpanda', 'halo semua, baru dateng!'],
+      ['kopi_susu', 'GG, clutch-nya rapi banget'],
+      ['nightowl_tv', 'boleh request lagu yang tadi? yang intro-nya pakai gitar akustik, enak buat nemenin kerja'],
+      ['lagspike', 'lol'],
+      ['bubbletea42', 'first time catching the stream live. the wood bubbles fit the vibe really well. how long have you been playing this game?'],
+      ['sunset_drift', 'semangat terus streamnya!']
+    ];
+    var next = 0;
+    function showNext() {
+      var s = samples[next++ % samples.length];
+      addBubble(s[0], escapeHTML(s[1]));
+    }
+    showNext();
+    setInterval(showNext, 1500);
+  }
+
   // ?channel=name connects on load and hides the input, so OBS needs no Interact step
   var params = new URLSearchParams(window.location.search);
   var urlChannel = (params.get('channel') || '').trim();
-  if (urlChannel) {
+  if (params.get('demo') === '1') {
+    controls.style.display = 'none';
+    startDemo();
+  } else if (urlChannel) {
     controls.style.display = 'none';
     connect(urlChannel);
   }
