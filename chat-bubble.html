@@ -499,6 +499,14 @@ html, body {
       connectBtn.click();
     }
   });
+
+  // ?channel=name connects on load and hides the input, so OBS needs no Interact step
+  var params = new URLSearchParams(window.location.search);
+  var urlChannel = (params.get('channel') || '').trim();
+  if (urlChannel) {
+    controls.style.display = 'none';
+    connect(urlChannel);
+  }
 })();
 </script>
 </body>
